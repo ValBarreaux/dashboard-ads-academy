@@ -1,0 +1,35 @@
+name: Refresh dashboard ads
+
+on:
+  schedule:
+    - cron: "0 10 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Recuperer les donnees Meta
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+        run: python fetch_meta.py
+
+      - name: Construire le dashboard
+        run: |
+          python analyze.py
+          python build_dashboard3.py
+          mkdir -p _site
+          cp dashboard_ads.html _site/index.html
+
+      - name: Deployer sur Netlify (meme URL)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: npx --yes netlify-cli deploy --dir=_site --prod --site=a7c6372a-aeb8-4749-9e8a-8b11e6a5a9f2
