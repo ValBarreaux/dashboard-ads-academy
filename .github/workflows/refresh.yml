@@ -17,10 +17,19 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Installer les dependances
+        run: pip install gspread google-auth
+
       - name: Recuperer les donnees Meta
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
         run: python fetch_meta.py
+
+      - name: Recuperer les ventes (ROAS)
+        continue-on-error: true
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+        run: python fetch_sales.py
 
       - name: Construire le dashboard
         run: |
