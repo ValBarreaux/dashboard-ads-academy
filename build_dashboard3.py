@@ -93,7 +93,7 @@ for r in act:
     notes=" ".join(x for x in [R['crea'],R['life']] if x)
     isely='ely' in r['ad'].lower()
     pilot_rows.append(f"""<tr class="pr {R['cls']}">
-<td class="adname">{'🎯 ' if isely else ''){html.escape(r['ad'])}</td>
+<td class="adname">{'🎯 ' if isely else ''}{html.escape(r['ad'])}</td>
 <td class="r">{eur(r['spend']):.0f} €<span class="aed">{r['spend']:.0f} AED</span></td>
 <td class="r">{num(r['impr'])}</td><td class="r">{r['ctr']:.2f}%</td><td class="r hook">{r['v3hookpct']:.0f}%</td>
 <td class="r">{num(r['lpv'])}</td><td class="r strong">{lead}</td><td class="r cprdv">{cpl_disp}</td>
@@ -157,6 +157,7 @@ CSS=open('dash_css.txt').read()
 H=f"""<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard Ads — Académie Excellence</title><style>{CSS}</style></head><body>
 <div class="head"><div><h1>⚽ Dashboard Publicités — Académie Excellence</h1><div class="sub">Compte <b>Valentin Barreaux_Coaching</b> · Monitoring temps réel · Pilotage + Benchmark + ROAS + Historique</div></div>
 <div style="text-align:right"><div class="badge">Mis à jour : {today}</div><div class="badge" style="margin-top:6px">1 AED = 0,238 €</div></div></div>
+
 <h2 class="s1" style="margin-top:24px">📐 BENCHMARK — Funnel VSL de référence (frères Teliosa) vs tes chiffres</h2>
 {benchpanel}
 
@@ -192,6 +193,7 @@ H=f"""<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="vie
 <div class="tabhead"><div class="legend">Trier : clic sur l'en-tête · <b>CPL</b> cible 5–15 € (<span class="good">vert</span>≤8 · <span class="mid">jaune</span>≤15 · <span class="bad">rouge</span>&gt;15) · <b>VCR</b> cible ~15% (<span class="good">vert</span>≥15% · <span class="mid">jaune</span>≥8%)</div><input class="search" id="s" placeholder="Rechercher une ad…" oninput="filt()"></div>
 <div class="tablewrap"><table id="t"><thead><tr>
 <th onclick="srt('name')">Créative / Campagne</th><th onclick="srt('spend')" class="r">Dépense</th><th onclick="srt('impr')" class="r">Impr.</th><th onclick="srt('ctr')" class="r">CTR</th><th onclick="srt('hook')" class="r">Hook</th><th class="r">Leads</th><th onclick="srt('cpl')" class="r">CPL</th><th onclick="srt('rdv')" class="r">RDV</th><th onclick="srt('cprdv')" class="r">Coût/RDV</th><th onclick="srt('vcr')" class="r">VCR</th></tr></thead><tbody id="tb">{''.join(hist_rows)}</tbody></table></div>
+
 <div class="foot">Extraction automatique via l'API Meta Ads + ventes via les tracking sheets (compte de service Google). Lead = event « Prospect ». RDV = « Completed SS Application ». ROAS = ventes marquées « Ads »/ad_id ÷ dépense pub. Benchmark = funnel VSL frères Teliosa. Taux AED→EUR du {today}.</div>
 <script>
 const tb=document.getElementById('tb');let dir={{}};
