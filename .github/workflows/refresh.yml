@@ -5,9 +5,17 @@ on:
     - cron: "0 10 * * *"
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - name: Recuperer le code
         uses: actions/checkout@v4
@@ -38,10 +46,16 @@ jobs:
           mkdir -p _site
           cp dashboard_ads.html _site/index.html
 
-      - name: Deployer sur Netlify (meme URL)
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        run: |
-          TOKEN="$(printf '%s' "$NETLIFY_AUTH_TOKEN" | tr -d '[:space:]')"
-          npx --yes netlify-cli --version
-          npx --yes netlify-cli deploy --dir=_site --prod --site=a7c6372a-aeb8-4749-9e8a-8b11e6a5a9f2 --auth "$TOKEN"
+      - name: Configurer Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Uploader le site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deployer sur GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
