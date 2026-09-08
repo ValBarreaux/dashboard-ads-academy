@@ -41,4 +41,7 @@ jobs:
       - name: Deployer sur Netlify (meme URL)
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        run: npx --yes netlify-cli deploy --dir=_site --prod --site=a7c6372a-aeb8-4749-9e8a-8b11e6a5a9f2
+        run: |
+          TOKEN="$(printf '%s' "$NETLIFY_AUTH_TOKEN" | tr -d '[:space:]')"
+          npx --yes netlify-cli --version
+          npx --yes netlify-cli deploy --dir=_site --prod --site=a7c6372a-aeb8-4749-9e8a-8b11e6a5a9f2 --auth "$TOKEN"
