@@ -85,20 +85,35 @@ c=Counter(r['R']['tag'] for r in act)
 def chip(t,label,cls): return f'<span class="chip {cls}">{c.get(t,0)} {label}</span>' if c.get(t,0) else ''
 chips=chip("SCALER","à scaler","scale")+chip("PÉPITE À SCALER","pépite(s)","gem")+chip("MAINTENIR","à maintenir","keep")+chip("À SURVEILLER / BAISSER","à surveiller","watch")+chip("ALERTE — 0 RDV","alerte(s)","alert")+chip("APPRENTISSAGE","en apprentissage","learn")+chip("VIENT DE LANCER","viennent de lancer","new")
 
-pilot_rows=[]
-for r in act:
+def _pilot_ad_row(r):
     R=r['R']; rdv=int(r['rdv']); lead=int(r['lead'])
     cprdv_disp=f"{R['cprdv_e']:.0f} € <span class='aed'>({R['cprdv']:.0f} AED)</span>" if R['cprdv'] else "<span class='none'>—</span>"
     cpl_disp=f"{eur(r['spend']/lead):.0f} € <span class='aed'>({r['spend']/lead:.0f} AED)</span>" if lead else "<span class='none'>—</span>"
     notes=" ".join(x for x in [R['crea'],R['life']] if x)
     isely='ely' in r['ad'].lower()
-    pilot_rows.append(f"""<tr class="pr {R['cls']}">
+    return f"""<tr class="pr {R['cls']}">
 <td class="adname">{'🎯 ' if isely else ''}{html.escape(r['ad'])}</td>
 <td class="r">{eur(r['spend']):.0f} €<span class="aed">{r['spend']:.0f} AED</span></td>
 <td class="r">{num(r['impr'])}</td><td class="r">{r['ctr']:.2f}%</td><td class="r hook">{r['v3hookpct']:.0f}%</td>
 <td class="r">{num(r['lpv'])}</td><td class="r strong">{lead}</td><td class="r cprdv">{cpl_disp}</td>
 <td class="r strong">{rdv}</td><td class="r cprdv">{cprdv_disp}</td>
-<td><span class="tag {R['cls']}">{R['tag']}</span><div class="reco">{html.escape(R['act'])}{(' <b>'+html.escape(notes)+'</b>') if notes else ''}</div></td></tr>""")
+<td><span class="tag {R['cls']}">{R['tag']}</span><div class="reco">{html.escape(R['act'])}{(' <b>'+html.escape(notes)+'</b>') if notes else ''}</div></td></tr>"""
+
+# Regroupement du pilotage par ADSET (comme sur Meta)
+groups={}
+for r in act:
+    groups.setdefault((r.get('adset') or '(sans adset)'), []).append(r)
+adset_order=sorted(groups, key=lambda k:-sum(x['spend'] for x in groups[k]))
+pilot_rows=[]
+for asname in adset_order:
+    grp=groups[asname]
+    grp.sort(key=lambda r:(order[r['R']['tag']], -r['spend']))
+    g_sp=sum(r['spend'] for r in grp); g_rdv=sum(int(r['rdv']) for r in grp)
+    g_lead=sum(int(r['lead']) for r in grp)
+    g_cprdv=f"{eur(g_sp/g_rdv):.0f} € ({g_sp/g_rdv:.0f} AED)/RDV" if g_rdv else "— /RDV"
+    pilot_rows.append(f"""<tr class="adset-head"><td colspan="11" style="background:#1e2731;color:#eab308;font-weight:800;padding:11px 12px;border-top:2px solid #eab308;font-size:14px">📦 {html.escape(asname)} <span style="font-weight:500;color:#8b98a5;font-size:12.5px">— {len(grp)} ad(s) · {eur(g_sp):.0f} € ({num(g_sp)} AED) · {g_lead} prospects · {g_rdv} RDV · {g_cprdv}</span></td></tr>""")
+    for r in grp:
+        pilot_rows.append(_pilot_ad_row(r))
 
 def cpl_cls(v):
     if v is None: return 'none'

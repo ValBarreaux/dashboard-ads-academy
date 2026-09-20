@@ -28,7 +28,7 @@ RDV_CUSTOMS = {
 }
 
 FIELDS = (
-    "ad_id,ad_name,campaign_name,spend,impressions,reach,clicks,ctr,cpc,cpm,"
+    "ad_id,ad_name,adset_name,campaign_name,spend,impressions,reach,clicks,ctr,cpc,cpm,"
     "inline_link_clicks,inline_link_click_ctr,actions,video_play_actions"
 )
 
@@ -78,6 +78,7 @@ def parse(a):
     actions = a.get("actions")
     return {
         "ad": (a.get("ad_name") or "").strip(),
+        "adset": (a.get("adset_name") or "").strip(),
         "campaign": (a.get("campaign_name") or "").strip(),
         "spend": _f(a.get("spend")),
         "impr": int(_f(a.get("impressions"))),
@@ -113,7 +114,7 @@ def write_meta(rows):
 
 
 def write_active(rows):
-    cols = ["ad", "camp", "spend", "impr", "clicks", "ctr", "cpc",
+    cols = ["ad", "adset", "camp", "spend", "impr", "clicks", "ctr", "cpc",
             "lead", "rdv", "lpv", "v3"]
     with open("active_7d.tsv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, delimiter="\t", extrasaction="ignore")
@@ -122,7 +123,7 @@ def write_active(rows):
             if r["spend"] <= 0 and r["impr"] <= 0:
                 continue  # n'a pas diffuse sur 7 jours
             w.writerow({
-                "ad": r["ad"], "camp": r["campaign"],
+                "ad": r["ad"], "adset": r["adset"], "camp": r["campaign"],
                 "spend": "%.2f" % r["spend"], "impr": r["impr"], "clicks": r["clicks"],
                 "ctr": "%.4f" % r["ctr"], "cpc": "%.4f" % r["cpc"],
                 "lead": r["vsl"], "rdv": r["rdv"], "lpv": r["lpv"], "v3": r["v3"],
