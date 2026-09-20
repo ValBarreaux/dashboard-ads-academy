@@ -99,11 +99,12 @@ def _pilot_ad_row(r):
 <td class="r strong">{rdv}</td><td class="r cprdv">{cprdv_disp}</td>
 <td><span class="tag {R['cls']}">{R['tag']}</span><div class="reco">{html.escape(R['act'])}{(' <b>'+html.escape(notes)+'</b>') if notes else ''}</div></td></tr>"""
 
-# Regroupement du pilotage par ADSET (comme sur Meta)
+# Regroupement du pilotage par ADSET (comme sur Meta) + statut actif/pause
+def _grp_active(rows): return any((r.get('status') or 'ACTIVE')=='ACTIVE' for r in rows)
 groups={}
 for r in act:
     groups.setdefault((r.get('adset') or '(sans adset)'), []).append(r)
-adset_order=sorted(groups, key=lambda k:-sum(x['spend'] for x in groups[k]))
+adset_order=sorted(groups, key=lambda k:(0 if _grp_active(groups[k]) else 1, -sum(x['spend'] for x in groups[k])))
 pilot_rows=[]
 for asname in adset_order:
     grp=groups[asname]
@@ -111,7 +112,10 @@ for asname in adset_order:
     g_sp=sum(r['spend'] for r in grp); g_rdv=sum(int(r['rdv']) for r in grp)
     g_lead=sum(int(r['lead']) for r in grp)
     g_cprdv=f"{eur(g_sp/g_rdv):.0f} € ({g_sp/g_rdv:.0f} AED)/RDV" if g_rdv else "— /RDV"
-    pilot_rows.append(f"""<tr class="adset-head"><td colspan="11" style="background:#1e2731;color:#eab308;font-weight:800;padding:11px 12px;border-top:2px solid #eab308;font-size:14px">📦 {html.escape(asname)} <span style="font-weight:500;color:#8b98a5;font-size:12.5px">— {len(grp)} ad(s) · {eur(g_sp):.0f} € ({num(g_sp)} AED) · {g_lead} prospects · {g_rdv} RDV · {g_cprdv}</span></td></tr>""")
+    g_on=_grp_active(grp)
+    badge=('<span style="background:#0d3d24;color:#4ade80;border:1px solid #1f6b3f;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;margin-right:8px">● Actif</span>' if g_on else '<span style="background:#2a2f37;color:#8b98a5;border:1px solid #3a4552;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;margin-right:8px">⏸ En pause</span>')
+    hbg='#1e2731' if g_on else '#141922'; hcol='#eab308' if g_on else '#8b98a5'; hbord='#eab308' if g_on else '#3a4552'
+    pilot_rows.append(f"""<tr class="adset-head"><td colspan="11" style="background:{hbg};color:{hcol};font-weight:800;padding:11px 12px;border-top:2px solid {hbord};font-size:14px">{badge}📦 {html.escape(asname)} <span style="font-weight:500;color:#8b98a5;font-size:12.5px">— {len(grp)} ad(s) · {eur(g_sp):.0f} € ({num(g_sp)} AED) · {g_lead} prospects · {g_rdv} RDV · {g_cprdv}</span></td></tr>""")
     for r in grp:
         pilot_rows.append(_pilot_ad_row(r))
 

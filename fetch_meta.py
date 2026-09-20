@@ -58,6 +58,32 @@ def fetch(date_preset):
     return rows
 
 
+def fetch_statuses():
+    """Recupere le statut de diffusion (effective_status) par NOM d'ad.
+    Actif si au moins une instance du meme nom est ACTIVE. Non bloquant :
+    en cas d'erreur, renvoie {} (tout sera traite comme ACTIVE par defaut)."""
+    base = "https://graph.facebook.com/%s/%s/ads" % (API_VERSION, ACCOUNT)
+    params = {"fields": "name,effective_status", "limit": "500", "access_token": TOKEN}
+    url = base + "?" + urllib.parse.urlencode(params)
+    st = {}
+    try:
+        while url:
+            with urllib.request.urlopen(url, timeout=90) as resp:
+                data = json.load(resp)
+            for a in data.get("data", []):
+                nm = (a.get("name") or "").strip()
+                if not nm:
+                    continue
+                es = a.get("effective_status") or ""
+                st.setdefault(nm, es)
+                if es == "ACTIVE":
+                    st[nm] = "ACTIVE"
+            url = data.get("paging", {}).get("next")
+    except Exception:
+        return {}
+    return st
+
+
 def actval(actions, types):
     total = 0.0
     for a in (actions or []):
@@ -113,8 +139,8 @@ def write_meta(rows):
             w.writerow(o)
 
 
-def write_active(rows):
-    cols = ["ad", "adset", "camp", "spend", "impr", "clicks", "ctr", "cpc",
+def write_active(rows, statuses):
+    cols = ["ad", "adset", "camp", "status", "spend", "impr", "clicks", "ctr", "cpc",
             "lead", "rdv", "lpv", "v3"]
     with open("active_7d.tsv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=cols, delimiter="\t", extrasaction="ignore")
@@ -124,6 +150,7 @@ def write_active(rows):
                 continue  # n'a pas diffuse sur 7 jours
             w.writerow({
                 "ad": r["ad"], "adset": r["adset"], "camp": r["campaign"],
+                "status": statuses.get(r["ad"]) or "ACTIVE",
                 "spend": "%.2f" % r["spend"], "impr": r["impr"], "clicks": r["clicks"],
                 "ctr": "%.4f" % r["ctr"], "cpc": "%.4f" % r["cpc"],
                 "lead": r["vsl"], "rdv": r["rdv"], "lpv": r["lpv"], "v3": r["v3"],
@@ -134,8 +161,9 @@ def main():
     life = [parse(a) for a in fetch("maximum")]
     week = [parse(a) for a in fetch("last_7d")]
     life = [r for r in life if r["impr"] > 0]  # garder les creatives ayant diffuse
+    statuses = fetch_statuses()
     write_meta(life)
-    write_active(week)
+    write_active(week, statuses)
     tot_spend = sum(r["spend"] for r in life)
     tot_rdv = sum(r["rdv"] for r in life)
     print("OK -- lifetime: %d ads, %.0f AED, %d RDV | actives 7j: %d lignes"
