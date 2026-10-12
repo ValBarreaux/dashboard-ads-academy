@@ -2,7 +2,7 @@ name: Refresh dashboard ads
 
 on:
   schedule:
-    - cron: "0 10 * * *"
+    - cron: "0 3 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -38,6 +38,12 @@ jobs:
         env:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
         run: python fetch_sales.py
+
+      - name: Recuperer le funnel webinaire
+        continue-on-error: true
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+        run: python fetch_webinar.py
 
       - name: Construire le dashboard
         run: |
