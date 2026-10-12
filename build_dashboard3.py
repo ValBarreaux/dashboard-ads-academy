@@ -172,6 +172,47 @@ roas_section=f"""<h2 class="s1">\U0001f4b0 ROAS \u2014 ventes issues des pubs (V
 <div class="note gold"><b>Source : ta VSL tracking sheet</b> (suivi quotidien, uniquement les ventes issues des pubs, tous closers confondus). <b>ROAS sign\u00e9</b> = CA contractualis\u00e9 \u00f7 d\u00e9pense pub ; <b>ROAS encaiss\u00e9</b> = cash d\u00e9j\u00e0 encaiss\u00e9 \u00f7 d\u00e9pense (il monte \u00e0 mesure que les Split-Pay se paient).</div>
 <div class="panel" style="margin-top:14px">{roas_month_html}</div>"""
 
+# ---------- WEBINAIRE (tracking sheet webinaire) ----------
+web = {}
+if _os.path.exists('webinar.json'):
+    try: web = json.load(open('webinar.json'))
+    except Exception: pass
+if web and web.get('adspend'):
+    w_ins=web.get('inscrits',0); w_ci=web.get('cout_inscrit'); w_ti=web.get('taux_inscription')
+    w_wa=web.get('pct_whatsapp'); w_nv=web.get('nventes',0); w_ca=web.get('sales',0)
+    w_cash=web.get('cash',0); w_cpa=web.get('cpa'); w_rs=web.get('roas_signe',0); w_rc=web.get('roas_cash',0); w_cc=web.get('cout_call')
+    ci_small = f" <small>{w_ci:.2f} €/inscrit</small>" if w_ci else ""
+    cpa_small = f" <small>CPA {w_cpa:.0f} €</small>" if w_cpa else ""
+    ti_disp = f"{w_ti:.1f}%" if w_ti is not None else "—"
+    wa_disp = f"{w_wa:.1f}%" if w_wa is not None else "—"
+    cc_note = f"Coût/call {w_cc:.0f} €. " if w_cc else ""
+    wb = web.get('by_month',{})
+    if wb:
+        _wrows=[]
+        for k in sorted(wb):
+            m=wb[k]
+            ci = f"{m['cout_inscrit']:.2f} €" if m.get('cout_inscrit') else "—"
+            _wrows.append(f"<tr><td>{k}</td><td class='r'>{num(m.get('adspend',0))} €</td><td class='r'>{m.get('inscrits',0)}</td><td class='r'>{ci}</td><td class='r strong'>{m.get('nventes',0)}</td><td class='r'>{num(m.get('sales',0))} €</td><td class='r'>{m.get('roas_signe',0):.2f}x</td></tr>")
+        web_month = "<h3>Détail par mois</h3><table><thead><tr><th>Mois</th><th class='r'>Dépense</th><th class='r'>Inscrits</th><th class='r'>Coût/inscrit</th><th class='r'>Ventes</th><th class='r'>CA signé</th><th class='r'>ROAS</th></tr></thead><tbody>"+"".join(_wrows)+"</tbody></table>"
+    else:
+        web_month = ""
+    webinar_section = f"""<h2 class="s1">\U0001f3a5 Funnel Webinaire — tracking sheet</h2>
+<div class="kpis">
+<div class="kpi"><div class="lab">Dépense pub</div><div class="val">{num(web.get('adspend',0))} €</div></div>
+<div class="kpi"><div class="lab">Inscrits</div><div class="val">{w_ins}{ci_small}</div></div>
+<div class="kpi"><div class="lab">Taux d'inscription</div><div class="val">{ti_disp}</div></div>
+<div class="kpi"><div class="lab">% WhatsApp (engagés)</div><div class="val">{wa_disp}</div></div>
+<div class="kpi"><div class="lab">Ventes</div><div class="val">{w_nv}{cpa_small}</div></div>
+<div class="kpi"><div class="lab">CA signé</div><div class="val">{num(w_ca)} €</div></div>
+<div class="kpi"><div class="lab">Encaissé</div><div class="val">{num(w_cash)} €</div></div>
+<div class="kpi"><div class="lab">ROAS signé</div><div class="val {_rcls(w_rs)}">{w_rs:.2f}x</div></div>
+<div class="kpi"><div class="lab">ROAS encaissé</div><div class="val {_rcls(w_rc)}">{w_rc:.2f}x</div></div>
+</div>
+<div class="note gold"><b>Source : ta tracking sheet webinaire</b> (suivi quotidien). Funnel : clic → inscription → WhatsApp/présence → call → vente. {cc_note}Mise à jour automatique chaque jour.</div>
+<div class="panel" style="margin-top:14px">{web_month}</div>"""
+else:
+    webinar_section = """<h2 class="s1">\U0001f3a5 Funnel Webinaire — tracking sheet</h2><p class="ptxt">En attente des données : partage la tracking sheet webinaire en Lecteur avec le compte de service <b>tracking-automation@cowork-tracking.iam.gserviceaccount.com</b> pour activer cette section.</p>"""
+
 CSS=open('dash_css.txt').read()
 H=f"""<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard Ads — Académie Excellence</title><style>{CSS}</style></head><body>
 <div class="head"><div><h1>⚽ Dashboard Publicités — Académie Excellence</h1><div class="sub">Compte <b>Valentin Barreaux_Coaching</b> · Monitoring temps réel · Pilotage + Benchmark + ROAS + Historique</div></div>
@@ -207,6 +248,8 @@ H=f"""<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="vie
 </div>
 
 {roas_section}
+
+{webinar_section}
 
 <h2>📊 Historique complet — toutes les créatives ({len(ads)})</h2>
 <div class="tabhead"><div class="legend">Trier : clic sur l'en-tête · <b>CPL</b> cible 5–15 € (<span class="good">vert</span>≤8 · <span class="mid">jaune</span>≤15 · <span class="bad">rouge</span>&gt;15) · <b>VCR</b> cible ~15% (<span class="good">vert</span>≥15% · <span class="mid">jaune</span>≥8%)</div><input class="search" id="s" placeholder="Rechercher une ad…" oninput="filt()"></div>
